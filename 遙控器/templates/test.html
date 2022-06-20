@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.0/socket.io.min.js"></script>
+
+    <title>remote</title>
+    <style>
+        @import url(../static/css/remote2.css);
+    </style> 
+</head>
+
+
+<body>
+    <div class="container">
+
+        <div class="content">
+            <div class="title">即時資訊</div>   
+            <div class="block info">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>室外溫度</td>
+                        <td id="en_temp"></td>
+                    </tr>
+                    <tr>
+                        <td>冷氣狀態</td>
+                        <td id="on_off"></td>
+                    </tr>
+                    <tr>
+                        <td>運轉模式</td>
+                        <td id="mode"></td>
+                    </tr>
+                    <tr>
+                        <td>設定溫度</td>
+                        <td id="ac_temp"></td>
+                    </tr>
+                    <tr>
+                        <td>風速</td>
+                        <td id="fan"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <button class="connect" onclick="connect()">connect</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        <div class="content"> 
+            <div class="title">冷氣設定</div>  
+            <div class="block setting">
+                <table class="table2">
+                    <tbody>
+                        <tr class="onoff">
+                            <td>開關</td>
+                            <td>
+                                <div class="radios">
+                                <form action="">
+                                    <label>
+                                    <input type="radio" name="power" id="on" value="on"/>
+                                    <span>ON</span>
+                                    </label>								
+                                    <label>
+                                    <input type="radio" name="power" id="off" value="off" checked/>
+                                    <span>OFF</span>
+                                    </label>
+                                </form>
+                                </div>
+                            </td>
+                        </tr>
+                      
+                        <tr class="tr_setting">
+                            <td>模式</td>
+                            <td>
+                                <form action="">
+                                <div class="radios">
+                                    <label>
+                                        <input type="radio" name="mode" id="auto" value="auto" checked/>
+                                        <span>自動</span>
+                                    </label>								
+                                    <label>
+                                        <input type="radio" name="mode" id="cool" value="cool" />
+                                        <span>冷房</span>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="mode" id="warm" value="warm" />
+                                        <span>暖房</span>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="mode" id="dry" value="dry" />
+                                        <span>除濕</span>
+                                    </label>
+                                </div>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>溫度</td>
+                            <td>
+                                <button class="btn_temp" id="minus">-</button>
+                                <input id="set_temp" type="number" min="16" max="30" value="26">
+                                <button class="btn_temp" id="plus">+</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>風速</td>
+                            <td>
+                                <div class="radios2">
+                                <form action="">
+                                    <label>
+                                        <input type="radio" name="fan" id="" value="l" checked/>
+                                        <span>弱</span>
+                                    </label>								
+                                    <label>
+                                        <input type="radio" name="fan" id="" value="m" />
+                                        <span>中</span>
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="fan" id="" value="h" />
+                                        <span>強</span>
+                                    </label>
+                                </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <button class="send" onclick="send()">確認</button>
+                            </td>
+                        </tr>
+                    
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+
+    $('#minus').on('click', function(e) {
+        var input = $(e.target).closest('td').find('input');
+        input[0]['stepDown']();
+    });
+    $('#plus').on('click', function(e) {
+        var input = $(e.target).closest('td').find('input');
+        input[0]['stepUp']();
+    });
+
+    $(document).ready(function(){
+        if ($("#off").is(":checked")){
+            $("input[name!='power']").prop('disabled', true);
+            $(".btn_temp").prop('disabled', true);
+        }
+    })
+
+    $( "#on" ).click(function() {
+        $("input").prop('disabled', false);
+        $(".btn_temp").prop('disabled', false);
+    });
+    $( "#off" ).click(function() {
+        $("input[name!='power']").prop('disabled', true);
+        $(".btn_temp").prop('disabled', true);
+
+    });
+
+
+
+    function send(){
+        
+        var markedCheckbox = document.getElementsByTagName('input');  
+        var temp = document.getElementById('set_temp')
+
+        if ($("#on").is(":checked")){
+            var arr = [];
+            
+            for (var checkbox of markedCheckbox) {  
+                if (checkbox.checked)  {
+                    arr.push(checkbox.value);
+                    //console.log(checkbox.value + ', ');  
+                }
+            }
+            arr.push(temp.value);
+            console.log(arr)
+            //console.log(document.getElementById('set_temp').value);
+            
+            var socket = io.connect();
+            socket.emit(arr); 
+        }
+        else{
+            console.log('off');
+            var socket = io.connect();
+            socket.emit('off');
+        }
+    }
+
+
+    function connect(){
+        var socket_stop = io.connect();
+        socket_stop.emit('start_data');
+        
+        socket.on('data', function(msg) {
+          $('#en_temp').html(msg.en_temp);
+          $('#on_off').html(msg.on_off);
+          $('#mode').html(msg.mode);
+          $('#ac_temp').html(msg.ac_temp);
+          $('#fan').html(msg.fan);
+        }); 
+    }
+
+</script>
+
+</body>
+</html>
